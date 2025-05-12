@@ -7,7 +7,7 @@ import random
 
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-df_pairs = pd.read_csv("usable_argument_pairs.csv")
+df_pairs = pd.read_csv("../data/usable_argument_pairs.csv")
 
 def get_gpt_score(claim, argument):
     prompt = f"""
@@ -57,7 +57,7 @@ for i, row in df_pairs.iterrows():
     reply_pos = row["positive"]
     reply_neg = row["negative"]
 
-    # Randomize order
+    # randomize order
     if random.random() < 0.5:
         reply_a, reply_b = reply_pos, reply_neg
         correct = "A"
@@ -84,10 +84,10 @@ for i, row in df_pairs.iterrows():
         "explanation_b": expl_b
     })
 
-    print(f"{i}: A={score_a}, B={score_b} -> predicted={predicted} ({'✅' if is_correct else '❌'})")
+    print(f"{i}: A={score_a}, B={score_b} -> predicted={predicted} ({'(O)' if is_correct else '(X)'})")
 
 results_df = pd.DataFrame(results)
-results_df.to_csv("cmv_anthropic_style_scoring_results.csv", index=False)
+results_df.to_csv("../data/cmv_anthropic_style_scoring_results.csv", index=False)
 
 accuracy = results_df["is_correct"].mean()
-print(f"\n📊 CMV accuracy using Anthropic-style scoring: {accuracy:.2%}")
+print(f"\nCMV accuracy using Anthropic-style scoring: {accuracy:.2%}")

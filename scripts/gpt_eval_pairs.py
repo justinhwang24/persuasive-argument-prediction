@@ -9,6 +9,8 @@ import random
 load_dotenv()
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+df_pairs = pd.read_csv("../data/usable_argument_pairs.csv")
+
 def extract_choice(response_text):
     response_text = response_text.strip().upper()
     if "A" in response_text and not "B" in response_text[:response_text.find("A")]:
@@ -84,13 +86,11 @@ def eval(dataframe, mode="predict-explain", max_samples=50):
 
     return pd.DataFrame(predictions)
 
-df_pairs = pd.read_csv("usable_argument_pairs.csv")
-
 results_predict_explain = eval(df_pairs, mode="predict-explain", max_samples=50)
 results_explain_predict = eval(df_pairs, mode="explain-predict", max_samples=50)
 
-results_predict_explain.to_csv("results_predict_then_explain.csv", index=False)
-results_explain_predict.to_csv("results_explain_then_predict.csv", index=False)
+results_predict_explain.to_csv("../data/results_predict_then_explain.csv", index=False)
+results_explain_predict.to_csv("../data/results_explain_then_predict.csv", index=False)
 
 for df, label in [(results_predict_explain, "Predict-Then-Explain"), (results_explain_predict, "Explain-Then-Predict")]:
     valid = df[df["gpt_choice"].isin(["A", "B"])]

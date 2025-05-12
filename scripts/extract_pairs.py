@@ -36,4 +36,4 @@ def extract_usable_pairs(path, sample_size=50):
     return pd.DataFrame(pairs)
 
 df = extract_usable_pairs(DATA_PATH)
-df.to_csv("usable_argument_pairs.csv", index=False)
+df.to_csv("../data/usable_argument_pairs.csv", index=False)

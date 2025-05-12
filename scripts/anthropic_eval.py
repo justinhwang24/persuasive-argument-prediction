@@ -72,7 +72,7 @@ for i, row in df.iterrows():
     print(f"{i}: GPT={gpt_score} vs Human={human_score}")
 
 results_df = pd.DataFrame(results)
-results_df.to_csv("gpt_vs_human_persuasion.csv", index=False)
+results_df.to_csv("../data/gpt_vs_human_persuasion.csv", index=False)
 
 valid = results_df[results_df["gpt_score"] > 0]
 correlation = valid["gpt_score"].corr(valid["human_score"])
