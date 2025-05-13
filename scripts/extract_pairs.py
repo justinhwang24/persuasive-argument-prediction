@@ -1,11 +1,9 @@
 from config import DATA_PATH
-import os
 import json
 import bz2
-import random
 import pandas as pd
 
-def extract_usable_pairs(path, sample_size=50):
+def extract_usable_pairs(path, sample_size=500):
     pairs = []
 
     with bz2.open(path, 'rt') as f:
@@ -35,5 +33,8 @@ def extract_usable_pairs(path, sample_size=50):
     print(f"Extracted {len(pairs)} usable post–reply pairs")
     return pd.DataFrame(pairs)
 
-df = extract_usable_pairs(DATA_PATH)
-df.to_csv("../data/usable_argument_pairs.csv", index=False)
+def main():
+    df = extract_usable_pairs(DATA_PATH)
+    df.to_csv("data/argument_pairs.csv", index=False)
+
+main()

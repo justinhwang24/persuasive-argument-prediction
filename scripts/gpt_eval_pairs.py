@@ -6,11 +6,7 @@ import openai
 import os
 import random
 
-load_dotenv()
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-df_pairs = pd.read_csv("../data/usable_argument_pairs.csv")
-
+# extracts the GPT's choice between reply A and reply B
 def extract_choice(response_text):
     response_text = response_text.strip().upper()
     if "A" in response_text and not "B" in response_text[:response_text.find("A")]:
@@ -22,6 +18,7 @@ def extract_choice(response_text):
             return line.strip()[0]
     return "UNKNOWN"
 
+# returns prompt asking GPT to pick between a pair of replies
 def build_prompt(post, reply_a, reply_b, mode):
     instructions = {
         "predict-explain": 'Which reply is more persuasive and more likely to change the original poster’s view? \
@@ -32,27 +29,28 @@ def build_prompt(post, reply_a, reply_b, mode):
         raise ValueError("Invalid mode. Choose 'predict-explain' or 'explain-predict'.")
 
     return f"""
-A Reddit user posted:
-\"{post}\"
+    A Reddit user posted:
+    \"{post}\"
 
-Two users replied:
+    Two users replied:
 
-Reply A:
-\"{reply_a}\"
+    Reply A:
+    \"{reply_a}\"
 
-Reply B:
-\"{reply_b}\"
+    Reply B:
+    \"{reply_b}\"
 
-{instructions[mode]}
-"""
+    {instructions[mode]}
+    """
 
-def eval(dataframe, mode="predict-explain", max_samples=50):
+# evaluate persuasiveness of replies using GPT
+def gpt_eval(dataframe, mode, max_samples=500):
     df = dataframe.sample(n=max_samples, random_state=42)
     predictions = []
 
     for i, row in tqdm(df.iterrows(), total=len(df), desc=f"Running GPT ({mode})"):
         # randomize reply order
-        if random.random() < 0.5:
+        if i % 2 == 0:
             reply_a, reply_b = row["positive"], row["negative"]
             correct_label = "A"
         else:
@@ -86,13 +84,22 @@ def eval(dataframe, mode="predict-explain", max_samples=50):
 
     return pd.DataFrame(predictions)
 
-results_predict_explain = eval(df_pairs, mode="predict-explain", max_samples=50)
-results_explain_predict = eval(df_pairs, mode="explain-predict", max_samples=50)
+def main():
+    load_dotenv()
+    global client
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-results_predict_explain.to_csv("../data/results_predict_then_explain.csv", index=False)
-results_explain_predict.to_csv("../data/results_explain_then_predict.csv", index=False)
+    df_pairs = pd.read_csv("data/argument_pairs.csv")
 
-for df, label in [(results_predict_explain, "Predict-Then-Explain"), (results_explain_predict, "Explain-Then-Predict")]:
-    valid = df[df["gpt_choice"].isin(["A", "B"])]
-    acc = (valid["gpt_choice"] == valid["correct_label"]).mean()
-    print(f"{label} Accuracy: {acc:.2%} on {len(valid)} samples")
+    results_predict_explain = gpt_eval(df_pairs, mode="predict-explain")
+    results_explain_predict = gpt_eval(df_pairs, mode="explain-predict")
+
+    results_predict_explain.to_csv("data/results_predict_then_explain.csv", index=False)
+    results_explain_predict.to_csv("data/results_explain_then_predict.csv", index=False)
+
+    for df, label in [(results_predict_explain, "Predict-Then-Explain"), (results_explain_predict, "Explain-Then-Predict")]:
+        valid = df[df["gpt_choice"].isin(["A", "B"])]
+        acc = (valid["gpt_choice"] == valid["correct_label"]).mean()
+        print(f"{label} Accuracy: {acc:.2%} on {len(valid)} samples")
+
+main()
